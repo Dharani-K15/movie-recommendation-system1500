@@ -23,7 +23,7 @@ cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
 indices = pd.Series(movies.index, index=movies['title_lower']).drop_duplicates()
 
-# ===================== HELPERS =====================
+# ===================== POSTER FETCH =====================
 def get_poster(title):
     if not TMDB_API_KEY:
         return None
@@ -34,19 +34,39 @@ def get_poster(title):
             "api_key": TMDB_API_KEY,
             "query": title
         }
-
         response = requests.get(url, params=params, timeout=5)
-        data = response.json()
+        if response.status_code != 200:
+            return None
 
+        data = response.json()
         for result in data.get("results", []):
             poster_path = result.get("poster_path")
             if poster_path:
                 return f"https://image.tmdb.org/t/p/w500{poster_path}"
-
     except Exception as e:
-        print("Poster error:", e)
+        print("TMDB error:", e)
 
     return None
+
+# ===================== RECOMMEND FUNCTION (THIS WAS MISSING) =====================
+def recommend(movie_name):
+    idx = indices.get(movie_name)
+    if idx is None:
+        return []
+
+    scores = list(enumerate(cosine_sim[idx]))
+    scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:6]
+
+    results = []
+    for i, _ in scores:
+        title = movies.iloc[i]['title']
+        results.append({
+            "title": title,
+            "overview": movies.iloc[i]['overview'][:200] + "...",
+            "poster": get_poster(title)
+        })
+
+    return results
 
 # ===================== ROUTES =====================
 @app.route("/", methods=["GET", "POST"])
@@ -56,10 +76,9 @@ def home():
 
     if request.method == "POST":
         movie_input = request.form.get("movie", "").strip().lower()
+        recommendations = recommend(movie_input)
 
-        if movie_input in indices.index:
-            recommendations = recommend(movie_input)
-        else:
+        if not recommendations:
             error = "Movie not found. Try another title."
 
     return render_template(
@@ -71,7 +90,6 @@ def home():
 @app.route("/autocomplete")
 def autocomplete():
     query = request.args.get("q", "").lower()
-
     if len(query) < 2:
         return jsonify([])
 
