@@ -8,7 +8,7 @@ import requests
 app = Flask(__name__)
 
 # ===================== CONFIG =====================
-TMDB_API_KEY = os.environ.get("TMDB_API_KEY")  # Render environment variable
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY")
 
 # ===================== LOAD DATA =====================
 movies = pd.read_csv("movies.csv")
@@ -34,37 +34,19 @@ def get_poster(title):
             "api_key": TMDB_API_KEY,
             "query": title
         }
+
         response = requests.get(url, params=params, timeout=5)
         data = response.json()
 
-        if data.get("results"):
-            poster_path = data["results"][0].get("poster_path")
+        for result in data.get("results", []):
+            poster_path = result.get("poster_path")
             if poster_path:
                 return f"https://image.tmdb.org/t/p/w500{poster_path}"
-    except Exception:
-        pass
+
+    except Exception as e:
+        print("Poster error:", e)
 
     return None
-
-
-def recommend(movie_title):
-    idx = indices.get(movie_title)
-    if idx is None:
-        return []
-
-    scores = list(enumerate(cosine_sim[idx]))
-    scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:6]
-
-    recommendations = []
-    for i, _ in scores:
-        title = movies.iloc[i]['title']
-        recommendations.append({
-            "title": title,
-            "overview": movies.iloc[i]['overview'][:200] + "...",
-            "poster": get_poster(title)
-        })
-
-    return recommendations
 
 # ===================== ROUTES =====================
 @app.route("/", methods=["GET", "POST"])
@@ -73,10 +55,10 @@ def home():
     error = ""
 
     if request.method == "POST":
-        movie_name = request.form.get("movie", "").strip().lower()
+        movie_input = request.form.get("movie", "").strip().lower()
 
-        if movie_name in indices:
-            recommendations = recommend(movie_name)
+        if movie_input in indices.index:
+            recommendations = recommend(movie_input)
         else:
             error = "Movie not found. Try another title."
 
