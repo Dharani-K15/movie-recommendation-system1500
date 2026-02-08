@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import os
 
 app = Flask(__name__)
 
@@ -21,9 +22,8 @@ def recommend(movie_title):
     idx = indices[movie_title]
     scores = list(enumerate(cosine_sim[idx]))
     scores = sorted(scores, key=lambda x: x[1], reverse=True)
-    scores = scores[1:6]   # top 5 recommendations
+    scores = scores[1:6]
     movie_indices = [i[0] for i in scores]
-
     return movies['title'].iloc[movie_indices].tolist()
 
 @app.route("/", methods=["GET", "POST"])
@@ -44,7 +44,9 @@ def home():
         recommendations=recommendations,
         error=error
     )
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 
