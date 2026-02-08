@@ -8,7 +8,7 @@ import requests
 app = Flask(__name__)
 
 # ===================== CONFIG =====================
-TMDB_API_KEY = "YOUR_TMDB_API_KEY_HERE"
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY")  # Render environment variable
 
 # ===================== LOAD DATA =====================
 movies = pd.read_csv("movies.csv")
@@ -25,20 +25,33 @@ indices = pd.Series(movies.index, index=movies['title_lower']).drop_duplicates()
 
 # ===================== HELPERS =====================
 def get_poster(title):
-    url = "https://api.themoviedb.org/3/search/movie"
-    params = {
-        "api_key": TMDB_API_KEY,
-        "query": title
-    }
-    response = requests.get(url, params=params).json()
-    if response.get("results"):
-        poster_path = response["results"][0].get("poster_path")
-        if poster_path:
-            return f"https://image.tmdb.org/t/p/w500{poster_path}"
+    if not TMDB_API_KEY:
+        return None
+
+    try:
+        url = "https://api.themoviedb.org/3/search/movie"
+        params = {
+            "api_key": TMDB_API_KEY,
+            "query": title
+        }
+        response = requests.get(url, params=params, timeout=5)
+        data = response.json()
+
+        if data.get("results"):
+            poster_path = data["results"][0].get("poster_path")
+            if poster_path:
+                return f"https://image.tmdb.org/t/p/w500{poster_path}"
+    except Exception:
+        pass
+
     return None
 
+
 def recommend(movie_title):
-    idx = indices[movie_title]
+    idx = indices.get(movie_title)
+    if idx is None:
+        return []
+
     scores = list(enumerate(cosine_sim[idx]))
     scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:6]
 
@@ -50,6 +63,7 @@ def recommend(movie_title):
             "overview": movies.iloc[i]['overview'][:200] + "...",
             "poster": get_poster(title)
         })
+
     return recommendations
 
 # ===================== ROUTES =====================
@@ -59,17 +73,26 @@ def home():
     error = ""
 
     if request.method == "POST":
-        movie_name = request.form["movie"].strip().lower()
+        movie_name = request.form.get("movie", "").strip().lower()
+
         if movie_name in indices:
             recommendations = recommend(movie_name)
         else:
-            error = "Movie not found."
+            error = "Movie not found. Try another title."
 
-    return render_template("index.html", recommendations=recommendations, error=error)
+    return render_template(
+        "index.html",
+        recommendations=recommendations,
+        error=error
+    )
 
 @app.route("/autocomplete")
 def autocomplete():
     query = request.args.get("q", "").lower()
+
+    if len(query) < 2:
+        return jsonify([])
+
     matches = movies[movies['title_lower'].str.contains(query, na=False)]
     return jsonify(matches['title'].head(10).tolist())
 
