@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Movie Recommendation System</title>
-    <link rel="stylesheet" href="/static/style.css">
+
+    <!-- IMPORTANT: Render-safe CSS link -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-<div style="background:linear-gradient(90deg,#1e3c72,#2a5298);
-color:white;
-padding:15px;
-text-align:center;
-font-size:20px;
-font-weight:bold;">
-🚀 UI UPDATE TEST — DEPLOY IS WORKING 🚀
+<!-- Top Banner -->
+<div class="banner">
+    🚀 Movie Recommendation System — Live 🚀
 </div>
 
 <h1>🎬 Movie Recommendation System</h1>
@@ -23,7 +21,7 @@ font-weight:bold;">
     <input
         type="text"
         name="movie"
-        placeholder="Type a movie name..."
+        placeholder="Type a movie name (e.g. Avatar)"
         required
     >
     <button type="submit">Recommend</button>
@@ -34,14 +32,16 @@ font-weight:bold;">
 {% endif %}
 
 {% if recommendations %}
-<h2>Recommended Movies</h2>
-<ul>
+<h2 style="text-align:center; margin-top:20px;">Recommended Movies</h2>
+
+<div class="movies">
     {% for movie in recommendations %}
-        <li>🎥 {{ movie }}</li>
+    <div class="movie-card">
+        <h3>🎥 {{ movie }}</h3>
+    </div>
     {% endfor %}
-</ul>
+</div>
 {% endif %}
 
 </body>
 </html>
-
