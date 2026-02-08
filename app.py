@@ -1,52 +1,79 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import os
+import requests
 
 app = Flask(__name__)
 
-# Load dataset
+# ===================== CONFIG =====================
+TMDB_API_KEY = "YOUR_TMDB_API_KEY_HERE"
+
+# ===================== LOAD DATA =====================
 movies = pd.read_csv("movies.csv")
 movies = movies[['title', 'overview']]
 movies['overview'] = movies['overview'].fillna('')
+movies['title_lower'] = movies['title'].str.lower()
 
-# ML logic
+# ===================== ML MODEL =====================
 tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(movies['overview'])
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-indices = pd.Series(movies.index, index=movies['title']).drop_duplicates()
+indices = pd.Series(movies.index, index=movies['title_lower']).drop_duplicates()
+
+# ===================== HELPERS =====================
+def get_poster(title):
+    url = "https://api.themoviedb.org/3/search/movie"
+    params = {
+        "api_key": TMDB_API_KEY,
+        "query": title
+    }
+    response = requests.get(url, params=params).json()
+    if response.get("results"):
+        poster_path = response["results"][0].get("poster_path")
+        if poster_path:
+            return f"https://image.tmdb.org/t/p/w500{poster_path}"
+    return None
 
 def recommend(movie_title):
     idx = indices[movie_title]
     scores = list(enumerate(cosine_sim[idx]))
-    scores = sorted(scores, key=lambda x: x[1], reverse=True)
-    scores = scores[1:6]
-    movie_indices = [i[0] for i in scores]
-    return movies['title'].iloc[movie_indices].tolist()
+    scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:6]
 
+    recommendations = []
+    for i, _ in scores:
+        title = movies.iloc[i]['title']
+        recommendations.append({
+            "title": title,
+            "overview": movies.iloc[i]['overview'][:200] + "...",
+            "poster": get_poster(title)
+        })
+    return recommendations
+
+# ===================== ROUTES =====================
 @app.route("/", methods=["GET", "POST"])
 def home():
     recommendations = []
     error = ""
 
     if request.method == "POST":
-        movie_name = request.form["movie"]
-
+        movie_name = request.form["movie"].strip().lower()
         if movie_name in indices:
             recommendations = recommend(movie_name)
         else:
             error = "Movie not found."
 
-    return render_template(
-        "index.html",
-        recommendations=recommendations,
-        error=error
-    )
+    return render_template("index.html", recommendations=recommendations, error=error)
 
+@app.route("/autocomplete")
+def autocomplete():
+    query = request.args.get("q", "").lower()
+    matches = movies[movies['title_lower'].str.contains(query, na=False)]
+    return jsonify(matches['title'].head(10).tolist())
+
+# ===================== RUN =====================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
