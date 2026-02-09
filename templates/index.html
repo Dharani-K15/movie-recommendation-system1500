@@ -36,17 +36,18 @@
 
 <div class="movies">
     {% for movie in recommendations %}
-    <div class="movie-card">
+<div class="movie-card">
 
-        {% if movie.poster %}
+    {% if movie.poster %}
         <img src="{{ movie.poster }}" alt="{{ movie.title }}">
-        {% endif %}
+    {% endif %}
 
-        <h3>🎥 {{ movie.title }}</h3>
-        <p>{{ movie.overview }}</p>
+    <h3>🎥 {{ movie.title }}</h3>
+    <p>{{ movie.overview }}</p>
 
-    </div>
-    {% endfor %}
+</div>
+{% endfor %}
+
 </div>
 {% endif %}
 
