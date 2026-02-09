@@ -9,35 +9,30 @@
 <body>
 
 <div class="banner">
-  🚀 Movie Recommendation System — Live 🚀
+  🎬 Movie Recommendation System — Live
 </div>
 
-<h1>🎬 Discover Movies You’ll Love</h1>
+<h1>Discover Movies You’ll Love</h1>
 
 <form method="POST">
-  <input
-    type="text"
-    name="movie"
-    placeholder="Search a movie (Avatar, Titanic...)"
-    required
-  >
+  <input type="text" name="movie" placeholder="Search a movie (Avatar, Titanic...)" required>
   <button type="submit">Recommend</button>
 </form>
 
 {% if error %}
-<p style="text-align:center; color:#e50914;">{{ error }}</p>
+<p class="error">{{ error }}</p>
 {% endif %}
 
 {% if recommendations %}
 <div class="movies">
-
   {% for movie in recommendations %}
   <div class="movie-card">
 
     {% if movie.poster %}
       <img src="{{ movie.poster }}" alt="{{ movie.title }}">
     {% else %}
-      <div class="no-poster">🎬 No Poster</div>
+      <!-- DEFAULT POSTER -->
+      <img src="{{ url_for('static', filename='no-poster.png') }}" alt="No poster">
     {% endif %}
 
     <h3>{{ movie.title }}</h3>
@@ -45,7 +40,6 @@
 
   </div>
   {% endfor %}
-
 </div>
 {% endif %}
 
