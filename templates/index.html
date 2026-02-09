@@ -3,21 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Movie Recommendation System</title>
-
-  <!-- Render-safe CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-<!-- Top Banner -->
 <div class="banner">
   🚀 Movie Recommendation System — Live 🚀
 </div>
 
 <h1>🎬 Discover Movies You’ll Love</h1>
 
-<!-- Search Form -->
 <form method="POST">
   <input
     type="text"
@@ -29,14 +25,12 @@
 </form>
 
 {% if error %}
-<p class="error">{{ error }}</p>
+<p style="text-align:center; color:#e50914;">{{ error }}</p>
 {% endif %}
 
 {% if recommendations %}
-<h2 class="row-title">Recommended For You</h2>
+<div class="movies">
 
-<!-- Netflix-style horizontal row -->
-<div class="movie-row">
   {% for movie in recommendations %}
   <div class="movie-card">
 
@@ -51,6 +45,7 @@
 
   </div>
   {% endfor %}
+
 </div>
 {% endif %}
 
