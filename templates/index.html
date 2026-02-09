@@ -1,30 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Movie Recommendation System</title>
+  <meta charset="UTF-8">
+  <title>Movie Recommendation System</title>
 
-    <!-- Render-safe CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Render-safe CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
 <!-- Top Banner -->
 <div class="banner">
-    🚀 Movie Recommendation System — Live 🚀
+  🚀 Movie Recommendation System — Live 🚀
 </div>
 
-<h1>🎬 Movie Recommendation System</h1>
+<h1>🎬 Discover Movies You’ll Love</h1>
 
+<!-- Search Form -->
 <form method="POST">
-    <input
-        type="text"
-        name="movie"
-        placeholder="Type a movie name (e.g. Avatar)"
-        required
-    >
-    <button type="submit">Recommend</button>
+  <input
+    type="text"
+    name="movie"
+    placeholder="Search a movie (Avatar, Titanic...)"
+    required
+  >
+  <button type="submit">Recommend</button>
 </form>
 
 {% if error %}
@@ -32,22 +33,24 @@
 {% endif %}
 
 {% if recommendations %}
-<h2 style="text-align:center; margin-top:20px;">Recommended Movies</h2>
+<h2 class="row-title">Recommended For You</h2>
 
-<div class="movies">
-    {% for movie in recommendations %}
-<div class="movie-card">
+<!-- Netflix-style horizontal row -->
+<div class="movie-row">
+  {% for movie in recommendations %}
+  <div class="movie-card">
 
     {% if movie.poster %}
-        <img src="{{ movie.poster }}" alt="{{ movie.title }}">
+      <img src="{{ movie.poster }}" alt="{{ movie.title }}">
+    {% else %}
+      <div class="no-poster">🎬 No Poster</div>
     {% endif %}
 
-    <h3>🎥 {{ movie.title }}</h3>
+    <h3>{{ movie.title }}</h3>
     <p>{{ movie.overview }}</p>
 
-</div>
-{% endfor %}
-
+  </div>
+  {% endfor %}
 </div>
 {% endif %}
 
